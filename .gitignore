@@ -3,4 +3,8 @@ dist/
 src-tauri/target/
 docs_cache/
 __pycache__/
+package_bat/
 *.pyc
+*.bat
+.idea/
+.vscode/
