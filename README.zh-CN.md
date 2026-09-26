@@ -3,7 +3,7 @@
 Ren'Py 文档的离线浏览与智能查询工具：同时收录**英文原版文档**与**社区中文翻译**，
 界面与原版文档一致（左侧分组目录 + 右侧正文），只读本地数据、可完全离线使用。
 
-> English README: [`README.md`](README.md) — 默认英文说明
+> English README: [`README.md`](README.md) — 英文说明
 
 ---
 
