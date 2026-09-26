@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "RenPyDoc 默认能力：窗口与文档源网络访问（用于更新检测）",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://api.gitee.com/*" },
+        { "url": "https://gitee.com/*" },
+        { "url": "https://www.renpy.org/*" }
+      ]
+    }
+  ]
+}

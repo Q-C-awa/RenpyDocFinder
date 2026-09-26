@@ -1,0 +1,76 @@
+{
+  "name": "renpydocfinder",
+  "version": "1.0.0",
+  "description": "Renpy文档查询",
+  "main": "electron/main.js",
+  "author": "RenPyDoc Finder",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack:dir": "electron-builder --win --dir",
+    "dist": "electron-builder --win",
+    "dist:win": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable",
+    "dist:linux": "electron-builder --linux",
+    "dist:mac": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.renpydoc.finder",
+    "productName": "RenpyDocFinder",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build-res"
+    },
+    "files": [
+      "index.html",
+      "assets/**/*",
+      "data/**/*",
+      "build/**/*",
+      "electron/**/*",
+      "docs_cache/**/*"
+    ],
+    "win": {
+      "icon": "build-res/icon.png",
+      "signAndEditExecutable": true,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "RenpyDocFinder-Setup.exe",
+      "shortcutName": "Renpy文档查询"
+    },
+    "portable": {
+      "artifactName": "RenpyDocFinder-Portable.exe"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "artifactName": "RenpyDocFinder.AppImage"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    }
+  }
+}
