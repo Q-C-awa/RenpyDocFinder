@@ -8,3 +8,11 @@ package_bat/
 *.bat
 .idea/
 .vscode/
+
+dist-py/
+build-py/
+build-res/
+exe-icon-preview.png
+assets/docimg/
+*.spec
+package/
