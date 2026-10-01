@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 侧边栏分组标题：比条目更小、更粗、主色、加大字距，形成明显层级 -->
+    <style name="TextAppearance.RenpyDoc.NavSubheader" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- 侧边栏条目文字 -->
+    <style name="TextAppearance.RenpyDoc.NavItem" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

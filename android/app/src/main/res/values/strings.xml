@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Renpy文档查询</string>
+    <string name="brand_title">Ren’Py 文档助手</string>
+    <string name="brand_sub">RenpyDoc Finder</string>
+    <string name="drawer_title">文档目录</string>
+    <string name="search_hint">搜索函数 / 变量 / 标签 / 正文</string>
+    <string name="search_clear">清空</string>
+    <string name="nav_back">返回</string>
+    <string name="nav_open_source">原文</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_api">API 条目</string>
+    <string name="filter_var">变量</string>
+    <string name="filter_label">标签</string>
+    <string name="filter_text">正文</string>
+    <string name="empty_result">没有找到相关结果</string>
+    <string name="empty_result_hint">试试更短的关键词、用「|」连接多个词，或者切换到英文文档搜索。</string>
+    <string name="menu_lang">文档语言</string>
+    <string name="menu_theme">深浅色主题</string>
+    <string name="menu_update">检查文档更新</string>
+    <string name="menu_about">关于</string>
+    <string name="menu_repo">打开中文文档仓库</string>
+    <string name="menu_en_docs">打开英文官方文档</string>
+    <string name="loading_index">正在建立搜索索引…</string>
+    <string name="loading_page">正在加载…</string>
+    <string name="no_data">文档数据缺失，请先在电脑上运行 package_bat/安卓-生成数据.bat 生成 assets/docs 数据后再打包。</string>
+    <string name="copied">已复制</string>
+    <string name="theme_auto">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="lang_zh">中文</string>
+    <string name="lang_en">EN</string>
+    <string name="home_search_prompt">搜索函数 / 变量 / 标签 / 正文</string>
+    <string name="home_open_index">打开完整文档目录</string>
+    <string name="home_quick_start">快速开始</string>
+</resources>

@@ -123,11 +123,13 @@ function build() {
   }
 
   const zhVersion = C.zhVersionFromFiles(zhFiles)
-  const zhFilesOut = C.makeChunkFiles('zh', zhPages, args.chunkBytes)
-  const enFilesOut = C.makeChunkFiles('en', enPages, args.chunkBytes)
+  const zhFilesOut = C.makeIndexChunks('zh', zhPages, args.chunkBytes)
+  const enFilesOut = C.makeIndexChunks('en', enPages, args.chunkBytes)
+  const zhPagesOut = C.makePageChunks('zh', zhPages, args.chunkBytes)
+  const enPagesOut = C.makePageChunks('en', enPages, args.chunkBytes)
 
   mkdirSync(args.outDir, { recursive: true })
-  for (const f of zhFilesOut.concat(enFilesOut)) {
+  for (const f of zhFilesOut.concat(enFilesOut, zhPagesOut, enPagesOut)) {
     writeFileSync(join(args.outDir, basename(f.name)), f.content, 'utf8')
   }
 
@@ -161,6 +163,10 @@ function build() {
     chunks: {
       zh: zhFilesOut.map(function (f) { return f.name }),
       en: enFilesOut.map(function (f) { return f.name })
+    },
+    pages: {
+      zh: zhPagesOut.map(function (f) { return f.name }),
+      en: enPagesOut.map(function (f) { return f.name })
     }
   }
   const metaFinal = 'window.RPD_META = JSON.parse(' + JSON.stringify(JSON.stringify(metaObj)) + ');\n'

@@ -240,14 +240,26 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     index_html = os.path.abspath(os.path.join(here, "..", "index.html"))
     api = Api()
-    win = webview.create_window(
-        "Renpy文档查询",
-        index_html,
-        js_api=api,
-        width=1280,
-        height=840,
-        min_size=(960, 600),
-    )
+    try:
+        # 窗口底色与页面一致，避免首帧前出现纯白块（旧版 pywebview 无此参数）
+        win = webview.create_window(
+            "Renpy文档查询",
+            index_html,
+            js_api=api,
+            width=1280,
+            height=840,
+            min_size=(960, 600),
+            background_color="#fef7ff",
+        )
+    except TypeError:
+        win = webview.create_window(
+            "Renpy文档查询",
+            index_html,
+            js_api=api,
+            width=1280,
+            height=840,
+            min_size=(960, 600),
+        )
     webview.start()
 
 

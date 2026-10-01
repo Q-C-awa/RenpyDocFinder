@@ -1,0 +1,301 @@
+/* RenpyDoc 手机端适配样式（只影响手机外壳，不动电脑版 style.css） */
+
+/* ============ 0) 边到边：网页铺满整屏，系统栏区域 = 顶栏/底栏自身的主题底色 ============
+   外壳把状态栏/导航栏做成透明，并用 --shell-* 变量把它们的尺寸传进来；
+   顶栏与底部状态栏各自吸收这段高度（见文末第 5 节），
+   所以屏幕上不再有"占位条"，也没有任何模糊/玻璃效果。 */
+html, body {
+  background: var(--md-surface) !important;
+}
+.app {
+  /* 不再留占位栏：顶栏/底栏自己把系统栏高度算进内边距，整屏连成一片 */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: var(--shell-left, 0px) !important;
+  padding-right: var(--shell-right, 0px) !important;
+  background: var(--md-surface);
+}
+/* 侧边栏是 fixed 元素，不随 .app 内边距走，需要自己避让系统栏 */
+.sidebar {
+  padding-top: var(--shell-top, 0px);
+  padding-bottom: var(--shell-bottom, 0px);
+}
+@media (max-width: 920px) {
+  .sidebar {
+    height: 100vh;
+    max-height: 100vh;
+  }
+}
+/* 提示条不要被导航栏压住 */
+.snackbar {
+  bottom: calc(var(--shell-bottom, 0px) + 64px) !important;
+}
+/* 不要玻璃效果：顶栏 / 页头 / 芯片条全部用不透明主题底色 */
+.top-bar,
+.page-head,
+.page-toc,
+.status-bar,
+.snackbar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.top-bar {
+  background: var(--md-surface) !important;
+}
+.status-bar {
+  background: var(--md-surface-container) !important;
+}
+
+/* ============ 1) 侧边栏里的语言 / 主题 / 更新 ============ */
+.mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--md-outline-variant);
+  flex-wrap: wrap;
+}
+.mobile-actions .seg {
+  flex: 1 1 auto;
+  width: auto;
+  justify-content: center;
+}
+.mobile-actions .seg button {
+  flex: 1;
+  min-height: 34px;
+}
+.mobile-actions #btnTheme,
+.mobile-actions #btnUpdate {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+.mobile-actions #btnTheme { margin-left: auto; }
+
+/* ============ 2) 顶栏品牌：图标不被挤压 ============ */
+.brand {
+  flex: none !important;
+  min-width: 0;
+}
+.brand-logo {
+  flex: none !important;
+  width: 34px;
+  height: 34px;
+}
+.brand-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.brand-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+.brand-title,
+.brand-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 很窄的屏幕上只留图标，把空间让给搜索框 */
+@media (max-width: 560px) {
+  .brand-text { display: none; }
+}
+
+/* ============ 3) 章节芯片条：固定在顶栏，不随正文滚动 ============ */
+/* 手机 WebView 里 position: sticky 不可靠（backdrop-filter / 入场动画 transform
+   都会让它失效），所以 mobile.js 把 #pageToc 直接搬进顶栏，这里只负责排版。 */
+.view-page { animation: none !important; }
+
+.top-bar.has-toc {
+  height: auto !important;
+  min-height: 56px;
+  flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+.top-bar .page-toc {
+  position: static !important;
+  flex: 1 0 100%;
+  order: 99;
+  margin: 2px 0 0 !important;
+  padding: 4px 8px 8px !important;
+  border-bottom: 0 !important;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.top-bar .page-toc:empty { display: none; }
+
+/* 页头：去掉返回按钮，标题与正文左对齐 */
+.view-page .page-head {
+  position: static !important;
+  margin: 0 -12px !important;
+  padding: 6px 12px !important;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+.view-page .page-head #pageBack { display: none !important; }
+.view-page .page-title { padding-left: 0 !important; }
+
+/* 手机/平板宽度统一正文与页头内边距，保证标题和正文左边缘对齐 */
+@media (max-width: 920px) {
+  .view-page { padding: 0 12px 30px; }
+  .view-page .page-head { min-height: 0; }
+}
+
+@media (max-width: 760px) {
+  .top-bar .page-toc { padding: 2px 8px 6px !important; }
+}
+
+/* ============ 3.5) 顶栏兜底 ============ */
+/* 万一适配脚本没生效，语言/主题/更新还在顶栏里时也不会被挤出屏幕外 */
+.top-bar {
+  flex-wrap: wrap;
+  height: auto !important;
+  min-height: 56px;
+}
+.top-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 4px;
+}
+.top-search { min-width: 96px; }
+
+/* ============ 3.8) 品牌按钮的水波纹修正 ============
+   PC 的 ripple 目标里包含 .brand（app.js），但容器规则里漏了它：
+   没有 position: relative，水波会按更外层祖先定位（位置跑偏）；
+   没有 overflow: hidden，圆形水波不会被裁成胶囊形状（溢出到外面）。 */
+.brand,
+.status-update {
+  position: relative;
+  overflow: hidden;
+}
+/* 按钮自身的局部水波 */
+.ripple-ink {
+  opacity: .18;
+}
+
+/* ============ 3.9) 全屏水波纹 ============
+   点品牌按钮时，从手指位置扩散出一圈直到铺满整屏，是很淡的一层光晕。 */
+.full-ripple-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;   /* 不拦截触摸 */
+  z-index: 9000;          /* 盖在内容之上、提示条之下 */
+  overflow: hidden;
+}
+.full-ripple-ink {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  opacity: 0;
+  /* 主色 → 第三色的渐层，很淡的一层光晕，只做提示不压内容 */
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--md-primary) 34%, transparent) 0%,
+    color-mix(in srgb, var(--md-primary) 24%, transparent) 34%,
+    color-mix(in srgb, var(--md-tertiary) 16%, transparent) 56%,
+    color-mix(in srgb, var(--md-primary) 8%, transparent) 68%,
+    transparent 76%);
+  animation: full-ripple 700ms cubic-bezier(.22, 1, .36, 1) forwards;
+  will-change: transform, opacity;
+}
+/* 波前：外缘一道细光环，扩散到底时更"有形" */
+.full-ripple-ink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--md-primary) 34%, transparent);
+  opacity: .7;
+}
+@keyframes full-ripple {
+  0%   { transform: scale(0);    opacity: 0; }
+  12%  { transform: scale(.2);   opacity: .62; }
+  60%  { opacity: .38; }
+  100% { transform: scale(1);    opacity: 0; }
+}
+/* 系统「移除动画」时不要这一层 */
+@media (prefers-reduced-motion: reduce) {
+  .full-ripple-ink { display: none; }
+}
+
+/* ============ 3.95) 代码复制按钮 ============
+   按钮挂在 .code-wrap 包裹层上，代码横向滚动时不会跟着跑；手机上给足触摸面积。 */
+.code-copy {
+  top: 8px; right: 8px;
+  width: 34px; height: 34px;
+}
+.code-copy svg { width: 17px; height: 17px; }
+/* 触屏没有 hover：点完不要卡在 hover 态，改用按下态反馈 */
+@media (hover: none) {
+  .code-copy:hover {
+    background: color-mix(in srgb, var(--md-pre-bg) 86%, var(--md-pre-fg) 14%);
+    border-color: transparent;
+    transform: none;
+  }
+  .code-copy:active {
+    background: color-mix(in srgb, var(--md-pre-bg) 74%, var(--md-pre-fg) 26%);
+  }
+}
+
+/* ============ 4) 触屏细节 ============ */
+/* 去掉系统默认的点击高亮方块（之前名单里漏了 .brand，所以点品牌按钮会出现一个方形高亮） */
+.brand,
+.status-update,
+.clear-btn,
+.code-copy,
+.nav-item, .nav-caption, .seg button, .icon-btn, .tonal-btn, .text-btn, .chip, .toc-chip, .result-card {
+  -webkit-tap-highlight-color: transparent;
+}
+.brand,
+.status-update,
+.code-copy,
+.nav-item, .nav-caption, .seg button, .icon-btn, .tonal-btn, .text-btn, .chip, .toc-chip, .result-card {
+  -webkit-touch-callout: none;
+}
+
+/* 触屏没有 hover：避免点完之后按钮"卡"在 hover 高亮状态（PC 的 :hover 规则在手机上会残留） */
+@media (hover: none) {
+  .brand:hover,
+  .icon-btn:hover,
+  .nav-item:hover,
+  .nav-caption:hover,
+  .text-btn:hover {
+    background: transparent;
+  }
+  .tonal-btn:hover {
+    box-shadow: none;
+    transform: none;
+  }
+}
+/* 品牌按钮点下去只留水波纹，不要额外描边 */
+.brand:focus,
+.brand:focus-visible {
+  outline: none;
+}
+/* 输入框字号 ≥16px，避免手机浏览器自动放大页面 */
+.top-search input { font-size: 16px; }
+
+/* ============ 5) 系统栏区域 = 顶栏/底栏自身 ============
+   顶部那块就是系统状态栏的位置（时钟/电量画在上面），Android 15+ 强制边到边、
+   系统不再帮应用留位，所以只能由顶栏自己让出这点高度——不然时钟会压在品牌名上。
+   这里把它做成顶栏自身的一段：同色调、无模糊，看起来就是一个完整的头部条。 */
+.top-bar {
+  padding-top: var(--shell-top, 0px) !important;
+  height: auto !important;
+  min-height: calc(50px + var(--shell-top, 0px)) !important;
+  background: var(--md-surface-container) !important;
+}
+.status-bar {
+  padding-bottom: calc(6px + var(--shell-bottom, 0px)) !important;
+  background: var(--md-surface-container) !important;
+}
+
+@media (max-width: 760px) {
+  .status-bar { font-size: 11px; }
+  .mobile-actions { padding: 8px 10px 10px; }
+}

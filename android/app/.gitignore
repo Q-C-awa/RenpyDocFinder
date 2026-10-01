@@ -1,0 +1,5 @@
+/build
+
+# 文档数据由 android/tools/build_docs.mjs 生成（体积大，不入库）
+/src/main/assets/docs/
+/src/main/assets/docimg/

@@ -1,0 +1,137 @@
+/* RenpyDoc Finder 手机版 —— 文档正文样式
+   颜色与电脑版 assets/style.css 的 MD3 token 一致，并带进入动画。 */
+:root {
+  --surface: #fef7ff;
+  --surface-2: #f3edf7;
+  --on-surface: #1d1b20;
+  --on-surface-var: #49454f;
+  --primary: #6750a4;
+  --outline: #79747e;
+  --outline-var: #cac4d0;
+  --code-bg: #efe7fb;
+  --pre-bg: #f6f4fa;
+  --pre-fg: #1d1b20;
+  --mark: #ffd54f;
+  --table-border: #d9d2e2;
+  --table-head: #efe9f6;
+  --tok-kw: #1976d2;
+  --tok-str: #d32f2f;
+  --tok-com: #6e7781;
+  --tok-num: #388e3c;
+  --tok-lbl: #8e24aa;
+  --tok-dec: #ef6c00;
+  --tok-builtin: #0097a7;
+  --tok-fn: #7b1fa2;
+  --tok-op: #757575;
+  --tok-prop: #e64a19;
+}
+html.dark {
+  --surface: #141218;
+  --surface-2: #211f26;
+  --on-surface: #e6e0e9;
+  --on-surface-var: #cac4d0;
+  --primary: #d0bcff;
+  --outline: #938f99;
+  --outline-var: #49454f;
+  --code-bg: #3a3248;
+  --pre-bg: #0f0d14;
+  --pre-fg: #eae3ff;
+  --mark: #7a5900;
+  --table-border: #4a4458;
+  --table-head: #2b2930;
+  --tok-kw: #a9a3f5;
+  --tok-str: #9ed2a9;
+  --tok-com: #8b949e;
+  --tok-num: #e3b37f;
+  --tok-lbl: #c8a7e0;
+  --tok-dec: #d4b878;
+  --tok-builtin: #7fd4c2;
+  --tok-fn: #a8c0ee;
+  --tok-op: #9aa0a6;
+  --tok-prop: #d9a6c0;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--surface); color: var(--on-surface); }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.72;
+  -webkit-text-size-adjust: 100%;
+  word-break: break-word;
+}
+.doc-body {
+  padding: 4px 16px 48px;
+  animation: docIn 240ms cubic-bezier(.2, 0, 0, 1);
+}
+@keyframes docIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.doc-body h1 { font-size: 1.45em; line-height: 1.35; margin: 18px 0 10px; }
+.doc-body h2 { font-size: 1.25em; margin: 22px 0 8px; padding-top: 6px; border-top: 1px solid var(--outline-var); }
+.doc-body h3 { font-size: 1.1em; margin: 18px 0 6px; }
+.doc-body h4, .doc-body h5, .doc-body h6 { font-size: 1em; margin: 14px 0 4px; }
+.doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { scroll-margin-top: 8px; }
+.doc-body p { margin: 10px 0; }
+.doc-body a { color: var(--primary); text-decoration: none; }
+.doc-body ul, .doc-body ol { padding-left: 22px; margin: 10px 0; }
+.doc-body li { margin: 5px 0; }
+.doc-body blockquote {
+  margin: 12px 0; padding: 8px 14px; border-left: 4px solid var(--primary);
+  background: var(--surface-2); border-radius: 0 10px 10px 0; color: var(--on-surface-var);
+}
+.doc-body hr { border: 0; border-top: 1px solid var(--outline-var); margin: 18px 0; }
+.doc-body code {
+  font-family: "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Consolas, monospace;
+  font-size: 0.92em; background: var(--code-bg); padding: 1px 5px; border-radius: 6px;
+}
+.doc-body code.copyable { cursor: pointer; }
+.doc-body code.copyable:active { background: var(--mark); }
+/* 代码块外层容器：复制按钮相对它定位，横向滚动时按钮保持不动 */
+.doc-body .code-block { position: relative; margin: 12px 0; }
+.doc-body .code-block pre { margin: 0; }
+.doc-body pre {
+  padding: 12px 14px; overflow-x: auto;
+  background: var(--pre-bg); color: var(--pre-fg); border: 1px solid var(--outline-var); border-radius: 12px;
+  font-size: 0.86em; line-height: 1.55;
+}
+.doc-body pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.copy-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 2; border: 1px solid var(--outline-var); border-radius: 8px;
+  background: var(--surface-2); color: var(--on-surface-var); font-size: 11px; padding: 3px 8px; cursor: pointer;
+}
+.copy-btn:active { background: var(--primary); color: #fff; }
+
+/* 文本选中颜色与 MD3 主题一致，避免默认蓝方框 */
+::selection { background: #6750a4; color: #ffffff; }
+html.dark ::selection { background: #d0bcff; color: #381e72; }
+.tok-kw { color: var(--tok-kw); font-weight: 600; }
+.tok-str { color: var(--tok-str); }
+.tok-num { color: var(--tok-num); }
+.tok-com { color: var(--tok-com); font-style: italic; }
+.tok-lbl { color: var(--tok-lbl); font-weight: 600; }
+.tok-dec { color: var(--tok-dec); }
+.tok-builtin { color: var(--tok-builtin); }
+.tok-fn { color: var(--tok-fn); }
+.tok-op { color: var(--tok-op); }
+.tok-prop { color: var(--tok-prop); }
+.doc-body table {
+  width: 100%; border-collapse: collapse; margin: 12px 0; display: block; overflow-x: auto; font-size: 0.94em;
+}
+.doc-body th, .doc-body td { border: 1px solid var(--table-border); padding: 7px 9px; text-align: left; vertical-align: top; }
+.doc-body th { background: var(--table-head); }
+.doc-body dl { margin: 10px 0; }
+.doc-body dt { font-weight: 600; margin-top: 10px; }
+.doc-body dt.sig { font-family: "Cascadia Mono", Consolas, monospace; font-size: 0.9em; color: var(--primary); }
+.doc-body dd { margin: 4px 0 10px 16px; color: var(--on-surface-var); }
+.doc-body img { max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 12px auto; }
+.doc-body .doc-img-missing {
+  display: block; margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--outline);
+  border-radius: 10px; font-size: 0.85em; color: var(--on-surface-var);
+}
+.doc-body .admonition {
+  margin: 12px 0; padding: 10px 14px; border-left: 4px solid var(--primary);
+  background: var(--surface-2); border-radius: 0 10px 10px 0;
+}
+.doc-body .admonition .admonition-title { font-weight: 700; margin: 0 0 4px; }
+.doc-body mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 2px; }

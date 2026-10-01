@@ -18,6 +18,9 @@
     idx: { zh: null, en: null },
     loadedChunks: { zh: {}, en: {} },
     loading: { zh: false, en: false },
+    pagesLoaded: { zh: false, en: false },
+    pagesLoading: { zh: null, en: null },
+    pageMap: { zh: null, en: null },
     query: '',
     filter: 'all',
     results: null,
@@ -228,8 +231,16 @@
         var arr = window[globalName] || []
         var pages = []
         for (var i = 0; i < arr.length; i++) pages = pages.concat(arr[i])
+        /* 索引层数据：正文 HTML 为空（首页正文内联在 homeHtml） */
+        for (var k = 0; k < pages.length; k++) {
+          var pg = pages[k]
+          pg.html = pg.homeHtml || pg.html || null
+          delete pg.homeHtml
+        }
+        var pmap = Object.create(null)
+        for (var m = 0; m < pages.length; m++) pmap[pages[m].slug] = pages[m]
+        state.pageMap[lang] = pmap
         state.data[lang] = pages
-        buildIndex(lang)
         state.loading[lang] = null
         resolve(pages)
       }
@@ -262,10 +273,15 @@
       state.dataBase = base
       state.data = { zh: null, en: null }
       state.idx = { zh: null, en: null }
+      state.pageMap = { zh: null, en: null }
       state.loadedChunks = { zh: {}, en: {} }
       state.loading = { zh: false, en: false }
+      state.pagesLoaded = { zh: false, en: false }
+      state.pagesLoading = { zh: null, en: null }
       window.RPD_ZH_CHUNKS = []
       window.RPD_EN_CHUNKS = []
+      window.RPD_ZH_PAGES = []
+      window.RPD_EN_PAGES = []
       store.set('dataBase', base)
       return ensureLang(state.lang).catch(function (err) {
         /* 新数据不可用时回退到内置数据 */
@@ -331,6 +347,58 @@
     })
   }
 
+  /* 正文层：首次打开文档页时才加载 */
+  function ensurePages(lang) {
+    if (state.pagesLoaded[lang]) return Promise.resolve(state.data[lang])
+    if (state.pagesLoading[lang]) return state.pagesLoading[lang]
+    var list = (META && META.pages && META.pages[lang]) || []
+    var globalName = 'RPD_' + lang.toUpperCase() + '_PAGES'
+    window[globalName] = window[globalName] || []
+    var promise = new Promise(function (resolve, reject) {
+      if (!list.length) { merge(); return }
+      var remaining = list.length
+      list.forEach(function (name) {
+        var s = document.createElement('script')
+        s.src = resolveDataUrl(name)
+        s.onload = function () { if (--remaining <= 0) merge() }
+        s.onerror = function () {
+          state.pagesLoading[lang] = null
+          reject(new Error('pages-load-failed: ' + name))
+        }
+        document.head.appendChild(s)
+      })
+      function merge() {
+        var arr = window[globalName] || []
+        var map = state.pageMap[lang] || {}
+        for (var i = 0; i < arr.length; i++) {
+          var chunk = arr[i]
+          for (var k = 0; k < chunk.length; k++) {
+            var item = chunk[k]
+            var pg = map[item.slug]
+            if (pg) pg.html = item.html
+          }
+        }
+        state.pagesLoaded[lang] = true
+        state.pagesLoading[lang] = null
+        resolve(state.data[lang])
+      }
+    })
+    state.pagesLoading[lang] = promise
+    return promise
+  }
+
+  /* 搜索索引：启动后空闲时构建，避免阻塞首屏；用户提前搜索则即时构建 */
+  function ensureIndex(lang) {
+    if (state.idx[lang]) return state.idx[lang]
+    return buildIndex(lang)
+  }
+
+  function buildIndexWhenIdle(lang) {
+    var run = function () { try { ensureIndex(lang) } catch (e) { /* ignore */ } }
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 })
+    else setTimeout(run, 300)
+  }
+
   function ensureLang(lang) {
     return loadLangData(lang, function (p) { setProgress(true, 10 + p * 80) })
       .then(function () { setProgress(false); return state.data[lang] })
@@ -366,7 +434,7 @@
           text: fullText,
           title: normalizeWs(sec.title || ''),
           pageTitle: normalizeWs(p.title || ''),
-          cjk: '', bis: Object.create(null), words: [], wordSet: Object.create(null), triByWord: Object.create(null)
+          cjk: '', bis: Object.create(null), words: [], wordSet: Object.create(null)
         }
         var t = fullText.toLowerCase()
         var cjk = ''
@@ -382,10 +450,6 @@
           if (entry.wordSet[w]) continue
           entry.wordSet[w] = 1
           entry.words.push(w)
-          var tg = {}
-          var tri = trigramsOf(w)
-          for (j = 0; j < tri.length; j++) tg[tri[j]] = 1
-          entry.triByWord[w] = tg
           var parts = w.split('.')
           for (j = 0; j < parts.length; j++) {
             if (parts[j] && parts[j] !== w && !entry.wordSet[parts[j]]) {
@@ -518,17 +582,24 @@
       }
     }
     if (bestSub) return { score: 44, ranges: wordRanges(entry.text, bestSub) }
+    /* 模糊相似度：按需对候选词计算 trigram Dice（长度差 > 3 直接跳过） */
     var tgrams = trigramsOf(name)
     var bestDice = 0, bestWord = null
     if (tgrams.length) {
+      var tset = Object.create(null)
+      for (i = 0; i < tgrams.length; i++) tset[tgrams[i]] = 1
       for (w = 0; w < entry.words.length; w++) {
         var wd3 = entry.words[w]
-        var wg = entry.triByWord[wd3]
-        if (!wg) continue
+        if (Math.abs(wd3.length - name.length) > 3) continue
+        var wtri = trigramsOf(wd3)
+        if (!wtri.length) continue
         var common = 0
-        for (i = 0; i < tgrams.length; i++) if (wg[tgrams[i]]) common++
+        var wset = Object.create(null)
+        for (i = 0; i < wtri.length; i++) {
+          if (!wset[wtri[i]]) { wset[wtri[i]] = 1; if (tset[wtri[i]]) common++ }
+        }
         var wl = 0
-        for (var k in wg) if (Object.prototype.hasOwnProperty.call(wg, k)) wl++
+        for (var k in wset) if (Object.prototype.hasOwnProperty.call(wset, k)) wl++
         var dice = (2 * common) / (tgrams.length + wl)
         if (dice > bestDice) { bestDice = dice; bestWord = wd3 }
       }
@@ -802,7 +873,17 @@
   }
 
   function addCopyButton(pre) {
-    if (pre.querySelector('.code-copy')) return
+    /* 复制按钮不能放进 pre 里：pre 是 overflow-x:auto 的滚动容器，
+       绝对定位的子元素会跟着代码一起横向滚走。所以外面套一层 .code-wrap，
+       按钮挂到包裹层上，相对包裹层定位，代码滚动时按钮原地不动。 */
+    var wrap = pre.parentNode
+    if (!wrap || !wrap.classList || !wrap.classList.contains('code-wrap')) {
+      wrap = document.createElement('div')
+      wrap.className = 'code-wrap'
+      if (pre.parentNode) pre.parentNode.insertBefore(wrap, pre)
+      wrap.appendChild(pre)
+    }
+    if (wrap.querySelector('.code-copy')) return
     var btn = document.createElement('button')
     btn.className = 'code-copy'
     btn.innerHTML = iconRef('copy')
@@ -811,7 +892,7 @@
       e.stopPropagation()
       copyText(pre.textContent, '代码已复制')
     })
-    pre.appendChild(btn)
+    wrap.appendChild(btn)
   }
 
   /* 语言自动判断：renpy 块里若为纯 Python 代码则用 python 高亮 */
@@ -1180,10 +1261,15 @@
       return
     }
     if (!state.idx[state.lang]) {
-      ensureLang(state.lang).then(function () {
-        if (els.searchInput.value.trim()) runSearch()
-      }).catch(function () {})
-      return
+      /* 索引层数据未加载时先取数据；数据已在本地则直接建索引后继续 */
+      if (!state.data[state.lang]) {
+        ensureLang(state.lang).then(function () {
+          if (els.searchInput.value.trim()) runSearch()
+        }).catch(function () {})
+        return
+      }
+      ensureIndex(state.lang)
+      if (!state.idx[state.lang]) return
     }
     var tokens = tokenizeQuery(q)
     state.lastTokens = tokens
@@ -1196,7 +1282,10 @@
   /* ---------------- 页面打开与导航 ---------------- */
   function pageOf(lang, slug) {
     var idx = state.idx[lang]
-    return idx && idx.bySlug[slug] ? idx.bySlug[slug] : null
+    if (idx) return idx.bySlug[slug] ? idx.bySlug[slug] : null
+    /* 搜索索引尚未构建时回退到数据层，避免首屏找不到页面 */
+    var map = state.pageMap[lang]
+    return map && map[slug] ? map[slug] : null
   }
 
   function openPage(slug, lang, anchor, push) {
@@ -1214,6 +1303,18 @@
       toast('未找到页面：' + esc(slug), 3200)
       return
     }
+    /* 正文层按需加载：首次打开文档页时才取 HTML */
+    if (!page.html) {
+      setProgress(true, 30)
+      ensurePages(lang).then(function () {
+        setProgress(false)
+        openPage(slug, lang, anchor, push)
+      }).catch(function (err) {
+        setProgress(false)
+        toast('正文加载失败：' + esc(err && err.message ? err.message : err), 5000)
+      })
+      return
+    }
     if (push) {
       if (state.current) state.stack.push({ slug: state.current.slug, lang: state.current.lang, anchor: state.current.anchor || null })
       state.baseMode = state.mode === 'results' ? 'results' : state.baseMode
@@ -1225,6 +1326,18 @@
   }
 
   function renderPage(page, lang, anchor) {
+    if (!page.html) {
+      /* 正文层按需加载（语言切换、返回上一页等入口统一走这里） */
+      setProgress(true, 30)
+      ensurePages(lang).then(function () {
+        setProgress(false)
+        renderPage(page, lang, anchor)
+      }).catch(function (err) {
+        setProgress(false)
+        toast('正文加载失败：' + esc(err && err.message ? err.message : err), 5000)
+      })
+      return
+    }
     showView('page')
     els.pageTitle.innerHTML = '<span class="lang-tag">' + esc(lang === 'zh' ? '中文' : 'EN') + '</span>' + esc(page.title)
     els.pageBack.style.visibility = (state.stack.length || state.baseMode === 'results') ? 'visible' : 'hidden'
@@ -1238,6 +1351,11 @@
     els.pageToc.innerHTML = tocHtml
     els.pageToc.querySelectorAll('.toc-chip').forEach(function (c) {
       c.addEventListener('click', function () {
+        /* 立即高亮被点击的芯片，滚动结束后再按位置校正 */
+        els.pageToc.querySelectorAll('.toc-chip').forEach(function (o) { o.classList.toggle('active', o === c) })
+        if (c.scrollIntoView) {
+          try { c.scrollIntoView({ block: 'nearest', inline: 'center' }) } catch (e) { /* ignore */ }
+        }
         scrollToAnchor(c.getAttribute('data-anchor'))
       })
     })
@@ -1315,6 +1433,11 @@
       ensureLang(state.lang).then(function () { renderHome(true) }).catch(function () {})
       return
     }
+    if (!page.html && !state.pagesLoaded[state.lang]) {
+      els.viewHome.innerHTML = '<div class="doc-body"><p>正在加载…</p></div>'
+      ensurePages(state.lang).then(function () { renderHome(true) }).catch(function () {})
+      return
+    }
     els.viewHome.innerHTML = '<div class="doc-body">' + page.html + '</div>'
     applyDocEnhance(els.viewHome)
   }
@@ -1351,21 +1474,25 @@
     return h + 16
   }
 
+  var tocJumpActive = false
+
   /* 可控平滑滚动：滚完再回调（便于滚动结束后再播放高亮） */
   function smoothScrollTo(top, done) {
+    var finish = function () { tocJumpActive = false; done() }
+    tocJumpActive = true
     var sc = els.scroller
     var reduce = false
     try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch (e) { reduce = false }
     if (!sc) {
       try { window.scrollTo({ top: top, behavior: reduce ? 'auto' : 'smooth' }) } catch (e) { window.scrollTo(0, top) }
-      setTimeout(done, reduce ? 0 : 300)
+      setTimeout(finish, reduce ? 0 : 300)
       return
     }
     var start = sc.scrollTop
     var dist = top - start
     if (reduce || Math.abs(dist) < 2) {
       sc.scrollTop = top
-      done()
+      finish()
       return
     }
     var duration = Math.min(700, Math.max(240, Math.abs(dist) * 0.45))
@@ -1375,7 +1502,7 @@
       var eased = 1 - Math.pow(1 - p, 3)
       sc.scrollTop = start + dist * eased
       if (p < 1) requestAnimationFrame(step)
-      else { sc.scrollTop = top; done() }
+      else { sc.scrollTop = top; finish() }
     }
     requestAnimationFrame(step)
   }
@@ -1412,13 +1539,17 @@
     }, 2650)
   }
 
-  /* 根据当前滚动位置高亮对应章节芯片 */
-  function updateActiveToc() {
+  /* 根据当前滚动位置高亮对应章节芯片
+     判定线 = 文档区顶部 + 标题栏 + 章节栏 + 余量：
+     跳转后目标标题正好停在“标题栏+章节栏”下方，若不含章节栏高度就会误判成上一个章节 */
+  function updateActiveToc(force) {
+    if (tocJumpActive && !force) return
     var chips = els.pageToc.querySelectorAll('.toc-chip')
     if (!chips.length || state.mode !== 'page') return
     var box = els.scroller ? els.scroller.getBoundingClientRect().top : 0
     var head = document.querySelector('.page-head')
-    var limit = box + ((head && head.offsetHeight) || 56) + 24
+    var tocH = (els.pageToc && els.pageToc.offsetHeight) ? els.pageToc.offsetHeight : 44
+    var limit = box + ((head && head.offsetHeight) || 56) + tocH + 24
     var best = null
     for (var i = 0; i < chips.length; i++) {
       var id = chips[i].getAttribute('data-anchor')
@@ -1426,6 +1557,11 @@
       if (!el2) continue
       if (el2.getBoundingClientRect().top <= limit) best = chips[i]
       else break
+    }
+    /* 滚到底部时，最后一节可能无法越过判定线，这里直接选中最后一个 */
+    var sc = els.scroller
+    if (sc && sc.scrollHeight - (sc.scrollTop + sc.clientHeight) <= 4) {
+      best = chips[chips.length - 1]
     }
     for (var k = 0; k < chips.length; k++) chips[k].classList.toggle('active', chips[k] === best)
     if (best && best.scrollIntoView) {
@@ -1448,7 +1584,7 @@
       /* 先滚动，滚动结束再播放高亮，保证用户真正看得到 */
       smoothScrollTo(top, function () {
         flashElement(target)
-        updateActiveToc()
+        updateActiveToc(true)
         clearTimeout(scrollToAnchor._t)
         scrollToAnchor._t = setTimeout(function () {
           body.querySelectorAll('.flash-anchor').forEach(function (n) { n.classList.remove('flash-anchor') })
@@ -2051,18 +2187,23 @@
 
     function boot() {
       return ensureLang(state.lang).then(function () {
+        /* 首屏优先：先出界面，索引构建推迟到空闲 */
         renderSidebar()
         renderHome()
+        buildIndexWhenIdle(state.lang)
         /* 启动自动更新检测（距上次检查超过 30 分钟才自动发起） */
         var last = parseInt(store.get('lastCheck', '0'), 10)
         var shouldAuto = !last || (Date.now() - last) > 30 * 60 * 1000
-        if (shouldAuto) setTimeout(function () { checkUpdates(false) }, 1200)
-        /* 空闲时预取另一语言索引 */
-        setTimeout(function () {
+        if (shouldAuto) setTimeout(function () { checkUpdates(false) }, 1500)
+        /* 另一语言：等界面空闲后再预取，避免启动阶段抢 CPU */
+        var prefetch = function () {
           ensureLang(state.lang === 'zh' ? 'en' : 'zh').then(function () {
             renderSidebar()
+            buildIndexWhenIdle(state.lang === 'zh' ? 'en' : 'zh')
           }).catch(function () {})
-        }, 4000)
+        }
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(prefetch, { timeout: 8000 })
+        else setTimeout(prefetch, 8000)
       })
     }
 

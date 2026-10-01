@@ -1,12 +1,18 @@
 /* RenPyDoc Finder — Electron 主进程
  * 提供：本地窗口加载 + 后台更新检测（绕过浏览器 CORS）+ 外部链接打开。
  */
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, dialog, nativeTheme } = require('electron')
 const https = require('https')
 const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const { pathToFileURL } = require('url')
+
+/* 启动优化：关闭与本地离线文档无关的 Chromium 特性，减少冷启动工作量（不影响界面与功能） */
+try {
+  app.commandLine.appendSwitch('disable-features',
+    'MediaRouter,OptimizationHints,Translate,AutofillServerCommunication,InterestFeedContentSuggestions')
+} catch (e) { /* ignore */ }
 
 const UA = 'RenPyDoc-Finder/1.0'
 const ZH_RAW = 'https://gitee.com/kurororo666/Renpydoc-ranslate/raw/master/source/'
@@ -295,22 +301,37 @@ process.on('uncaughtException', function (err) { reportFatal('uncaughtException'
 process.on('unhandledRejection', function (err) { reportFatal('unhandledRejection', err) })
 
 function createWindow() {
+  /* 窗口底色跟随系统深浅色，避免首帧出现白块或黑块 */
+  var bg = '#fef7ff'
+  try { bg = nativeTheme.shouldUseDarkColors ? '#141218' : '#fef7ff' } catch (e) { /* ignore */ }
   const win = new BrowserWindow({
     width: 1280,
     height: 840,
     minWidth: 960,
     minHeight: 600,
     autoHideMenuBar: true,
-    backgroundColor: '#fef7ff',
+    backgroundColor: bg,
+    show: false,                 /* 先隐藏，等首帧画好再显示，启动时不再出现空白窗口 */
     title: 'Renpy文档查询',
     icon: resolveIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      spellcheck: false,                     /* 不加载拼写检查词典，省掉启动开销 */
+      v8CacheOptions: 'bypassHeatCheck'      /* 首次运行即写入 V8 代码缓存，二次启动更快 */
     }
   })
+  /* 首帧就绪即显示（正常情况下数百毫秒内）；异常时兜底强制显示 */
+  var shown = false
+  var reveal = function () {
+    if (shown || win.isDestroyed()) return
+    shown = true
+    try { win.show(); win.focus() } catch (e) { /* ignore */ }
+  }
+  win.once('ready-to-show', reveal)
+  setTimeout(reveal, 2500)
   /* 固定窗口标题，避免被页面 title 覆盖 */
   win.on('page-title-updated', function (e) { e.preventDefault() })
   win.webContents.on('did-finish-load', function () {

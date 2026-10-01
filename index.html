@@ -8,6 +8,8 @@
 <title>Renpy文档查询</title>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" href="assets/ico/window-icon.gif" type="image/gif">
+<style>html{background:#fef7ff}html[data-theme="dark"]{background:#141218}</style>
+<script>/* 启动优化：首帧前套用已保存主题，避免外壳先亮后暗的闪烁 */try{var t=localStorage.getItem('rpd.theme')||'auto';var d=t==='dark'||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light')}catch(e){}</script>
 </head>
 <body>
 
@@ -122,7 +124,7 @@
 <div class="snackbar" id="snackbar" role="status"></div>
 <div class="progress" id="progressBar"><div class="progress-inner"></div></div>
 
-<script src="data/meta.js"></script>
-<script src="assets/app.js"></script>
+<script src="data/meta.js" defer></script>
+<script src="assets/app.js" defer></script>
 </body>
 </html>

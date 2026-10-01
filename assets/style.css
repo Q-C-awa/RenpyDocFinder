@@ -413,16 +413,19 @@ html[data-theme="light"] body {
 .tok-fn { color: var(--tok-fn); }
 .tok-op { color: var(--tok-op); }
 .tok-prop { color: var(--tok-prop); }
+/* 代码块包裹层：复制按钮相对它定位，pre 内部滚动不影响按钮位置 */
+.code-wrap { position: relative; }
+.doc-body .code-wrap pre { max-width: 100%; }
 .code-copy {
   position: absolute; top: 6px; right: 6px;
   width: 30px; height: 30px; border: 1px solid transparent; border-radius: 8px;
   display: grid; place-items: center; cursor: pointer;
-  background: color-mix(in srgb, var(--md-pre-fg) 10%, transparent);
+  background: color-mix(in srgb, var(--md-pre-bg) 86%, var(--md-pre-fg) 14%);
   color: var(--md-pre-fg);
   transition: background var(--trans-fast), transform var(--trans-fast), border-color var(--trans-fast);
 }
 .code-copy:hover {
-  background: color-mix(in srgb, var(--md-pre-fg) 18%, transparent);
+  background: color-mix(in srgb, var(--md-pre-bg) 76%, var(--md-pre-fg) 24%);
   border-color: color-mix(in srgb, var(--md-pre-fg) 22%, transparent);
   transform: translateY(-1px);
 }

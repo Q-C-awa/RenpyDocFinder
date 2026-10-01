@@ -1482,32 +1482,62 @@
 
   /* ---------------- 分块与元数据 ---------------- */
 
-  function makeChunkFiles(langKey, pages, maxBytes) {
+  /* 安全字面量：JSON 直接作为 JS 数组字面量输出（省掉字符串转义层与一次 JSON.parse） */
+  function toJsLiteral(json) {
+    return String(json).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
+  }
+
+  function packChunks(langKey, globalName, prefix, items, maxBytes) {
     maxBytes = maxBytes || 1500000
     var chunks = []
     var cur = []
     var curBytes = 0
-    for (var i = 0; i < pages.length; i++) {
-      var s = JSON.stringify(pages[i])
+    for (var i = 0; i < items.length; i++) {
+      var s = JSON.stringify(items[i])
       var b = byteLen(s)
       if (cur.length && curBytes + b + 2 > maxBytes) {
         chunks.push(cur)
         cur = []
         curBytes = 0
       }
-      cur.push(pages[i])
+      cur.push(items[i])
       curBytes += b
     }
     if (cur.length) chunks.push(cur)
-    var upper = langKey.toUpperCase()
-    var files = chunks.map(function (c, idx) {
-      var name = 'data/' + langKey + '.chunk.' + idx + '.js'
-      var json = JSON.stringify(c)
-      var js = 'window.RPD_' + upper + '_CHUNKS = window.RPD_' + upper + '_CHUNKS || [];\n' +
-        'window.RPD_' + upper + '_CHUNKS.push(JSON.parse(' + JSON.stringify(json) + '));\n'
+    return chunks.map(function (c, idx) {
+      var name = 'data/' + prefix + '.' + idx + '.js'
+      var js = 'window.' + globalName + ' = window.' + globalName + ' || [];\n' +
+        'window.' + globalName + '.push(' + toJsLiteral(JSON.stringify(c)) + ');\n'
       return { name: name, content: js, pages: c.length }
     })
-    return files
+  }
+
+  /* 索引层：结构 + 分节 + 词条（不含正文）；首页正文内联，首屏可立即渲染 */
+  function makeIndexChunks(langKey, pages, maxBytes) {
+    var items = pages.map(function (pg) {
+      var o = {
+        slug: pg.slug,
+        title: pg.title,
+        source: pg.source,
+        sections: pg.sections,
+        terms: pg.terms
+      }
+      if (pg.slug === 'index') o.homeHtml = pg.html
+      return o
+    })
+    return packChunks(langKey, 'RPD_' + langKey.toUpperCase() + '_CHUNKS', langKey + '.chunk', items, maxBytes)
+  }
+
+  /* 正文层：按页存放 HTML，首次打开文档页时按需加载 */
+  function makePageChunks(langKey, pages, maxBytes) {
+    var items = pages
+      .filter(function (pg) { return pg.slug !== 'index' })
+      .map(function (pg) { return { slug: pg.slug, html: pg.html } })
+    return packChunks(langKey, 'RPD_' + langKey.toUpperCase() + '_PAGES', langKey + '.pages', items, maxBytes)
+  }
+
+  function makeChunkFiles(langKey, pages, maxBytes) {
+    return makeIndexChunks(langKey, pages, maxBytes)
   }
 
   function buildMeta(opts) {
@@ -1579,6 +1609,8 @@
   RPDCore.parseZhNav = parseZhNav
   RPDCore.setZhLinkContext = setZhLinkContext
   RPDCore.makeChunkFiles = makeChunkFiles
+  RPDCore.makeIndexChunks = makeIndexChunks
+  RPDCore.makePageChunks = makePageChunks
   RPDCore.buildMeta = buildMeta
   RPDCore.enVersionFromHtml = enVersionFromHtml
   RPDCore.zhVersionFromFiles = zhVersionFromFiles

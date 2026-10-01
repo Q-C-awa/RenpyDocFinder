@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与电脑版 assets/style.css 完全一致的 Material Design 3 色板 -->
+    <color name="md_primary">#6750A4</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#EADDFF</color>
+    <color name="md_on_primary_container">#21005D</color>
+    <color name="md_secondary">#625B71</color>
+    <color name="md_on_secondary">#FFFFFF</color>
+    <color name="md_secondary_container">#E8DEF8</color>
+    <color name="md_on_secondary_container">#1D192B</color>
+    <color name="md_tertiary">#7D5260</color>
+    <color name="md_on_tertiary">#FFFFFF</color>
+    <color name="md_tertiary_container">#FFD8E4</color>
+    <color name="md_on_tertiary_container">#31111D</color>
+    <color name="md_surface">#FEF7FF</color>
+    <color name="md_surface_container">#F3EDF7</color>
+    <color name="md_surface_container_high">#ECE6F0</color>
+    <color name="md_surface_container_highest">#E6E0E9</color>
+    <color name="md_on_surface">#1D1B20</color>
+    <color name="md_on_surface_variant">#49454F</color>
+    <color name="md_outline">#79747E</color>
+    <color name="md_outline_variant">#CAC4D0</color>
+    <color name="md_error">#B3261E</color>
+    <color name="md_mark">#FFD54F</color>
+
+    <!-- 侧边栏计数徽标底色（电脑版 pill） -->
+    <color name="count_badge_bg">#33FFFFFF</color>
+
+    <!-- 分段按钮（语言/主题）：滑块与描边 -->
+    <color name="seg_thumb">#6750A4</color>
+    <color name="seg_on_thumb">#FFFFFF</color>
+    <color name="seg_track_stroke">#CAC4D0</color>
+
+    <!-- 基础黑白色（结果卡片徽标文字等仍会用到） -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- 启动图标背景使用电脑版主色 -->
+    <color name="ic_launcher_background_color">#6750A4</color>
+
+    <!-- 搜索框 / 徽标（沿用电脑版层次） -->
+    <color name="search_surface">#ECE6F0</color>
+    <color name="badge_api">#6750A4</color>
+    <color name="badge_var">#00696D</color>
+    <color name="badge_label">#7D5260</color>
+    <color name="badge_page">#4A6363</color>
+</resources>

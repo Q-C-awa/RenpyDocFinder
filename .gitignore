@@ -1,18 +1,122 @@
-node_modules/
-dist/
-src-tauri/target/
-docs_cache/
-__pycache__/
-package_bat/
-*.pyc
-*.bat
-.idea/
-.vscode/
+# ============================================================
+# Renpy文档查询 —— Git 忽略规则
+# 目标：仓库里只保留核心源码。生成物、缓存、构建产物、IDE 与系统文件都不入库。
+# 注意：本文件只对"未被跟踪"的文件生效。已经提交进版本库的旧文件，需要执行一次
+#       git rm -r --cached . 再 git add . 才会真正移出（package_bat\清理git缓存.bat 已封装）。
+# ============================================================
 
+# ---------- 依赖目录 ----------
+node_modules/
+
+# ---------- 桌面端构建 / 打包产物 ----------
+dist/
 dist-py/
 build-py/
 build-res/
-exe-icon-preview.png
-assets/docimg/
-*.spec
+out/
+release/
+dist-electron/
 package/
+exe-icon-preview.png
+*.spec
+*.exe
+
+# ---------- 生成的文档数据与图片（体积大，用脚本本地重建） ----------
+data/
+assets/docimg/
+android/app/src/main/assets/docs/
+android/app/src/main/assets/docimg/
+
+# ---------- 在线更新时下载的第三方文档源缓存 ----------
+docs_cache/
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- 前端 / Node 缓存 ----------
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------- Android / Gradle / Kotlin ----------
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/.kotlin/
+.gradle/
+.kotlin/
+local.properties
+*.apk
+*.aab
+*.class
+*.dex
+*.hprof
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ---------- 原生壳构建产物 ----------
+src-tauri/target/
+src-tauri/gen/
+
+# ---------- IDE / 编辑器 ----------
+.idea/
+.vscode/
+.vs/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+*~
+.history/
+
+# ---------- 系统文件 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ---------- 日志与临时文件 ----------
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.pid
+*.stackdump
+
+# ---------- 敏感信息（签名、密钥、环境变量） ----------
+*.jks
+*.keystore
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+
+# ---------- 本机辅助脚本（打包 / 调试用，只在本机保留） ----------
+package_bat/
+*.bat
+
+# 例外：Gradle 包装器是 Android 工程的一部分，要跟着源码一起走
+!android/gradlew.bat
