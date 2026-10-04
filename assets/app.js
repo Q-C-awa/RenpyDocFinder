@@ -20,6 +20,7 @@
     loading: { zh: false, en: false },
     pagesLoaded: { zh: false, en: false },
     pagesLoading: { zh: null, en: null },
+    metaRetry: { zh: false, en: false },   /* meta/分块不同步时只自愈一次，防止死循环 */
     pageMap: { zh: null, en: null },
     query: '',
     filter: 'all',
@@ -278,6 +279,7 @@
       state.loading = { zh: false, en: false }
       state.pagesLoaded = { zh: false, en: false }
       state.pagesLoading = { zh: null, en: null }
+      state.metaRetry = { zh: false, en: false }
       window.RPD_ZH_CHUNKS = []
       window.RPD_EN_CHUNKS = []
       window.RPD_ZH_PAGES = []
@@ -385,6 +387,44 @@
     })
     state.pagesLoading[lang] = promise
     return promise
+  }
+
+  /* meta 与分块文件不同步时的自愈：带 cache buster 重新取一次 meta.js（只做一次） */
+  function refreshDataMeta() {
+    /* 默认数据放在 data/ 下；同步更新后的数据目录则直接以 dataBase 为根 */
+    var url = state.dataBase ? (state.dataBase + 'meta.js?r=' + Date.now()) : ('data/meta.js?r=' + Date.now())
+    return loadScript(url).then(function () {
+      var fresh = window.RPD_META
+      if (fresh && fresh.pages) { META = fresh; return true }
+      return false
+    }).catch(function () { return false })
+  }
+
+  /* 取一页的正文 HTML。
+     关键：正文层的加载对同一页只能尝试一次。如果数据已经加载过、这一页依然没有 HTML
+     （说明 meta 与分块文件不是同一批生成物，例如缓存里是旧的 meta.js），必须立刻返回失败，
+     绝不能再让 openPage / renderPage 递归重试 —— 那会变成死循环，整个界面会卡死。 */
+  function ensurePageHtml(page, lang) {
+    if (page.html) return Promise.resolve(true)
+    if (state.pagesLoaded[lang]) return Promise.resolve(false)
+    return ensurePages(lang).then(function () {
+      if (page.html) return true
+      var metaHasPages = !!(META && META.pages && META.pages[lang])
+      if (!metaHasPages && !state.metaRetry[lang]) {
+        state.metaRetry[lang] = true
+        return refreshDataMeta().then(function (ok) {
+          if (!ok) return false
+          state.pagesLoaded[lang] = false
+          state.pagesLoading[lang] = null
+          return ensurePages(lang).then(function () { return !!page.html })
+        })
+      }
+      return false
+    })
+  }
+
+  function pageHtmlMissing() {
+    toast('这一页的正文不在当前索引数据里（索引只更新了一半）。请重新构建索引后再刷新。', 6500)
   }
 
   /* 搜索索引：启动后空闲时构建，避免阻塞首屏；用户提前搜索则即时构建 */
@@ -1295,6 +1335,7 @@
       var other = lang === 'zh' ? 'en' : 'zh'
       var page2 = pageOf(other, slug)
       if (page2) {
+        toast('该页没有' + (other === 'en' ? '中文' : '英文') + '版本，已为你打开' + (other === 'en' ? '英文原文' : '中文译本'), 3600)
         ensureLang(other).then(function () {
           openPage(slug, other, anchor, push)
         }).catch(function () {})
@@ -1306,9 +1347,10 @@
     /* 正文层按需加载：首次打开文档页时才取 HTML */
     if (!page.html) {
       setProgress(true, 30)
-      ensurePages(lang).then(function () {
+      ensurePageHtml(page, lang).then(function (ok) {
         setProgress(false)
-        openPage(slug, lang, anchor, push)
+        if (ok) openPage(slug, lang, anchor, push)
+        else pageHtmlMissing()
       }).catch(function (err) {
         setProgress(false)
         toast('正文加载失败：' + esc(err && err.message ? err.message : err), 5000)
@@ -1329,9 +1371,10 @@
     if (!page.html) {
       /* 正文层按需加载（语言切换、返回上一页等入口统一走这里） */
       setProgress(true, 30)
-      ensurePages(lang).then(function () {
+      ensurePageHtml(page, lang).then(function (ok) {
         setProgress(false)
-        renderPage(page, lang, anchor)
+        if (ok) renderPage(page, lang, anchor)
+        else pageHtmlMissing()
       }).catch(function (err) {
         setProgress(false)
         toast('正文加载失败：' + esc(err && err.message ? err.message : err), 5000)
@@ -2227,6 +2270,9 @@
       state.idx = { zh: null, en: null }
       state.loadedChunks = { zh: {}, en: {} }
       state.loading = { zh: false, en: false }
+      state.pagesLoaded = { zh: false, en: false }
+      state.pagesLoading = { zh: null, en: null }
+      state.metaRetry = { zh: false, en: false }
       window.RPD_ZH_CHUNKS = []
       window.RPD_EN_CHUNKS = []
       return boot()
